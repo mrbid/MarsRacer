@@ -70,7 +70,7 @@ GLint lightpos_id;
 GLint solidcolor_id;
 GLint color_id;
 GLint opacity_id;
-GLint normal_id; // 
+GLint normal_id; 
 
 // render state matrices
 mat projection;
@@ -92,13 +92,6 @@ ESModel mdlHova;
 uint RENDER_PASS = 0;
 double st=0; // start time
 char tts[32];// time taken string
-
-// camera vars
-uint focus_cursor = 1;
-double sens = 0.001f;
-f32 xrot = -2.1f;
-f32 yrot = 1.5f;
-f32 zoom = -32.f;
 
 // cosmos
 #define COSMOS_SIZE 256
@@ -274,19 +267,12 @@ void main_loop()
 //*************************************
 // camera
 //*************************************
-
-    // if(focus_cursor == 1)
-    // {
-    //     glfwGetCursorPos(window, &x, &y);
-    //     yrot -= (wh2-y)*sens;
-    //     glfwSetCursorPos(window, ww2, wh2);
-    // }
-
+    
     mIdent(&view);
     //mRotX(&view, 1.5708f);
-    mRotY(&view, 54.f*DEG2RAD);
-    mTranslate(&view, 0.f, 0.f, -15.f);
-    mRotY(&view, yrot-(t*0.1f));
+    mRotY(&view, 234.f*DEG2RAD);
+    mTranslate(&view, 0.f, 0.f, 15.f);
+    mRotY(&view, -t*0.1f);
 
 //*************************************
 // render
@@ -319,6 +305,24 @@ void main_loop()
             glUniform3f(color_id, cosmos_color[i].x, cosmos_color[i].y, cosmos_color[i].z);
             rSphere(cosmos[i].x, cosmos[i].y, cosmos[i].z, cosmos_scale[i]);
         }
+
+
+        shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
+        glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
+        glUniform1f(opacity_id, 1.0f);
+
+        mIdent(&model);
+        mRotX(&model, 180.f*DEG2RAD);
+        mTranslate(&model, 0.f, 0.f, 14.5f);
+        mMul(&modelview, &model, &view);
+
+        glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
+        glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
+
+        modelBind3(&mdlHova);
+        //glDisable(GL_DEPTH_TEST);
+        glDrawElements(GL_TRIANGLES, hova_numind, GL_UNSIGNED_SHORT, 0);
+        //glEnable(GL_DEPTH_TEST);
 
     }
 
@@ -362,39 +366,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
                 llct = t;
                 lc = 0;
             }
-        }
-
-        // toggle focus
-        else if(key == GLFW_KEY_ESCAPE)
-        {
-            focus_cursor = 1 - focus_cursor;
-            if(focus_cursor == 0)
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            else
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-            glfwSetCursorPos(window, ww2, wh2);
-            glfwGetCursorPos(window, &ww2, &wh2);
-        }
-    }
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    if(yoffset == -1)
-        zoom += 0.06f * zoom;
-    else if(yoffset == 1)
-        zoom -= 0.06f * zoom;
-    
-    if(zoom > -20.f){zoom = -20.f;}
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    if(action == GLFW_PRESS)
-    {
-        if(button == GLFW_MOUSE_BUTTON_4 || button == GLFW_MOUSE_BUTTON_RIGHT)
-        {
-            //
         }
     }
 }
@@ -443,7 +414,6 @@ int main(int argc, char** argv)
     printf("Argv(2): msaa, maxfps\n");
     printf("e.g; ./uc 16 60\n");
     printf("----\n");
-    printf("ESCAPE = Focus toggle camera control\n");
     printf("N = New game.\n");
     printf("F = FPS to console.\n");
     printf("----\n");
@@ -464,8 +434,8 @@ int main(int argc, char** argv)
     glfwSetWindowPos(window, (desktop->width/2)-(winw/2), (desktop->height/2)-(winh/2)); // center window on desktop
     glfwSetWindowSizeCallback(window, window_size_callback);
     glfwSetKeyCallback(window, key_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    //glfwSetMouseButtonCallback(window, mouse_button_callback);
+    //glfwSetScrollCallback(window, scroll_callback);
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(0); // 0 for immediate updates, 1 for updates synchronized with the vertical retrace, -1 for adaptive vsync
