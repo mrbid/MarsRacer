@@ -275,25 +275,18 @@ void main_loop()
 // camera
 //*************************************
 
-    if(focus_cursor == 1)
-    {
-        glfwGetCursorPos(window, &x, &y);
-
-        xrot += (ww2-x)*sens;
-        yrot += (wh2-y)*sens;
-
-        if(yrot > PI)
-            yrot = PI;
-        if(yrot < -PI)
-            yrot = -PI;
-
-        glfwSetCursorPos(window, ww2, wh2);
-    }
+    // if(focus_cursor == 1)
+    // {
+    //     glfwGetCursorPos(window, &x, &y);
+    //     yrot -= (wh2-y)*sens;
+    //     glfwSetCursorPos(window, ww2, wh2);
+    // }
 
     mIdent(&view);
-    mTranslate(&view, 0.f, 0.f, zoom);
-    mRotate(&view, yrot, 1.f, 0.f, 0.f);
-    mRotate(&view, xrot, 0.f, 0.f, 1.f);
+    //mRotX(&view, 1.5708f);
+    mRotY(&view, 54.f*DEG2RAD);
+    mTranslate(&view, 0.f, 0.f, -15.f);
+    mRotY(&view, yrot-(t*0.1f));
 
 //*************************************
 // render
@@ -311,7 +304,9 @@ void main_loop()
         glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &view.m[0][0]);
 
         modelBind3(&mdlOuter);
+        glDisable(GL_CULL_FACE);
         glDrawElements(GL_TRIANGLES, outer_numind, GL_UNSIGNED_INT, 0);
+        glEnable(GL_CULL_FACE);
         modelBind3(&mdlInner);
         glDrawElements(GL_TRIANGLES, inner_numind, GL_UNSIGNED_INT, 0);
 
@@ -423,7 +418,7 @@ void window_size_callback(GLFWwindow* window, int width, int height)
     uh2 = 1 / wh2;
 
     mIdent(&projection);
-    mPerspective(&projection, 60.0f, aspect, 0.01f, FAR_DISTANCE*2.f); 
+    mPerspective(&projection, 90.0f, aspect, 0.01f, FAR_DISTANCE*2.f); 
 }
 
 //*************************************
