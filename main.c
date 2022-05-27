@@ -99,7 +99,6 @@ double sens = 0.001f;
 f32 xrot = -2.1f;
 f32 yrot = 1.5f;
 f32 zoom = -32.f;
-f32 cxo = 0.9f;
 
 // cosmos
 #define COSMOS_SIZE 256
@@ -292,7 +291,7 @@ void main_loop()
     }
 
     mIdent(&view);
-    mTranslate(&view, 0.f, cxo, zoom);
+    mTranslate(&view, 0.f, 0.f, zoom);
     mRotate(&view, yrot, 1.f, 0.f, 0.f);
     mRotate(&view, xrot, 0.f, 0.f, 1.f);
 
