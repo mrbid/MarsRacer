@@ -269,9 +269,8 @@ void main_loop()
 //*************************************
     
     mIdent(&view);
-    //mRotX(&view, 1.5708f);
     mRotY(&view, 234.f*DEG2RAD);
-    mTranslate(&view, 0.f, 0.f, 15.f);
+    mTranslate(&view, 0.f, 0.f, 14.5f);
     mRotY(&view, -t*0.1f);
 
 //*************************************
@@ -313,16 +312,17 @@ void main_loop()
 
         mIdent(&model);
         mRotX(&model, 180.f*DEG2RAD);
-        mTranslate(&model, 0.f, 0.f, 14.5f);
+        mTranslate(&model, 0.f, 0.f, 14.3f);
+        mRotY(&view, (t*0.1f)+0.017f);
         mMul(&modelview, &model, &view);
 
         glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
         glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
 
         modelBind3(&mdlHova);
-        //glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
         glDrawElements(GL_TRIANGLES, hova_numind, GL_UNSIGNED_SHORT, 0);
-        //glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
 
     }
 
