@@ -346,7 +346,7 @@ void main_loop()
         {
             ah /= ahc;
             if(ah > th) // only adjust up and let gravity pull down
-                th += simspeed*88.f*(ah-th)*dt; // thrust
+                th += simspeed*60.f*(ah-th)*dt; // thrust
         }
 
         // "mars gravity"
