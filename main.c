@@ -101,7 +101,6 @@ f32 cosmos_scale[COSMOS_SIZE];
 // hova sim
 const f32 simspeed = 0.1f;
 f32 th = 14.5f; // terrain height
-f32 hh = 14.3f; // hova height
 
 //*************************************
 // utility functions
