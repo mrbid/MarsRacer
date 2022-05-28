@@ -21,8 +21,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#define uint unsigned int
-#define sint GLshort
+#define uint GLuint
 #define f32 GLfloat
 
 #include "inc/gl.h"
