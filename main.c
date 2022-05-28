@@ -6,6 +6,10 @@
     
         A hover car simulation on mars.
         
+        N = New sim (well randomises the cosmos)
+        P = Toggle nose up
+        F = FPS to console
+        
 */
 
 #include <math.h>
