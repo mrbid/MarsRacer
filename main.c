@@ -281,6 +281,7 @@ void main_loop()
 //*************************************
 // render
 //*************************************
+
         // clear render and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -323,7 +324,7 @@ void main_loop()
         mRotX(&model, 180.f*DEG2RAD);
         mTranslate(&model, sinf(t*simspeed)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
 
-        // workout average terrain height (will be 1 frame lagging due to order of exec, who cares.)
+        // workout average terrain height
         vec pos;
         mGetPos(&pos, model);
         f32 ah = 0.f;
@@ -345,7 +346,7 @@ void main_loop()
         {
             ah /= ahc;
             if(ah > th) // only adjust up and let gravity pull down
-                th += simspeed*88.f*(ah-th)*dt; // thrust th = ah;
+                th += simspeed*88.f*(ah-th)*dt; // thrust
         }
 
         // "mars gravity"
@@ -477,17 +478,12 @@ int main(int argc, char** argv)
     glfwSetWindowPos(window, (desktop->width/2)-(winw/2), (desktop->height/2)-(winh/2)); // center window on desktop
     glfwSetWindowSizeCallback(window, window_size_callback);
     glfwSetKeyCallback(window, key_callback);
-    //glfwSetMouseButtonCallback(window, mouse_button_callback);
-    //glfwSetScrollCallback(window, scroll_callback);
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(0); // 0 for immediate updates, 1 for updates synchronized with the vertical retrace, -1 for adaptive vsync
 
     // set icon
     glfwSetWindowIcon(window, 1, &(GLFWimage){16, 16, (unsigned char*)&icon_image.pixel_data});
-
-    // hide cursor
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 //*************************************
 // projection
@@ -525,17 +521,12 @@ int main(int argc, char** argv)
 // compile & link shader programs
 //*************************************
 
-    //makeAllShaders();
     makeLambert();
     makeLambert3();
 
 //*************************************
 // configure render options
 //*************************************
-
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    // glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
