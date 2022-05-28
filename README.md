@@ -1,4 +1,4 @@
 # MarsRacer
-Hovercar racing on mars!
+A hover car simulation on mars!
 
 WIP
