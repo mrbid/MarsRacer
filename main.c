@@ -87,7 +87,7 @@ ESModel mdlInner;
 ESModel mdlOuter;
 ESModel mdlHova;
 
-// game vars
+// sim vars
 #define FAR_DISTANCE 160.f
 uint RENDER_PASS = 0;
 double st=0; // start time
@@ -223,10 +223,10 @@ void rSphere(f32 x, f32 y, f32 z, f32 s)
 }
 
 //*************************************
-// game functions
+// sim functions
 //*************************************
 
-void newGame()
+void newSim()
 {
     const int seed = urand();
     srand(seed);
@@ -236,7 +236,7 @@ void newGame()
 
     char strts[16];
     timestamp(&strts[0]);
-    printf("[%s] Game Start [%u].\n", strts, seed);
+    printf("[%s] Sim Start [%u].\n", strts, seed);
     
     glfwSetWindowTitle(window, "Mars Racer");
     
@@ -393,7 +393,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             printf("[%s] Time-Taken: %s or %g Seconds\n\n", strts, tts, t-st);
             
             // new
-            newGame();
+            newSim();
         }
 
         // show average fps
