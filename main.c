@@ -113,11 +113,6 @@ void timestamp(char* ts)
     strftime(ts, 16, "%H:%M:%S", localtime(&tt));
 }
 
-static inline float fRandFloat(const float min, const float max)
-{
-    return min + randf() * (max-min); 
-}
-
 void timeTaken(uint ss)
 {
     if(ss == 1)
@@ -154,6 +149,11 @@ float urandf()
     ssize_t result = read(f, &s, sizeof(uint64_t));
     close(f);
     return (((float)s)+1e-7f) / FLOAT_UINT64_MAX;
+}
+
+static inline float fRandFloat(const float min, const float max)
+{
+    return min + randf() * (max-min); 
 }
 
 float uRandFloat(const float min, const float max)
@@ -337,7 +337,7 @@ void main_loop()
         vp.x = inner_vertices[i];
         vp.y = inner_vertices[i+1];
         vp.z = inner_vertices[i+2];
-        if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range
+        if(vDist(vp, pos) < 0.63f) // 0.63f is the sample range for the average
         {
             ah += vMod(vp);
             ahc += 1.f;
@@ -349,7 +349,7 @@ void main_loop()
         if(ah > th) // only adjust up and let gravity pull down
         {
             ymag = ah-th;
-            th += simspeed*60.f*ymag*dt; // thrust
+            th += simspeed*60.f*ymag*dt; // up thrust
         }
     }
 
