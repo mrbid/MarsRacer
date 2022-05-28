@@ -90,7 +90,6 @@ ESModel mdlHova;
 
 // sim vars
 #define FAR_DISTANCE 160.f
-uint RENDER_PASS = 0;
 double st=0; // start time
 char tts[32];// time taken string
 
