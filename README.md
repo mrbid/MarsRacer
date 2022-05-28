@@ -1,4 +1,4 @@
 # MarsRacer
 A hover car simulation on mars!
 
-WIP
+https://mrbid.github.io/hova
