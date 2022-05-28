@@ -101,6 +101,7 @@ f32 cosmos_scale[COSMOS_SIZE];
 // hova sim
 const f32 simspeed = 0.1f;
 f32 th = 14.5f; // terrain height
+uint enable_noseup = 0;
 
 //*************************************
 // utility functions
@@ -362,7 +363,8 @@ void main_loop()
         mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.16f);
 
         // ymag tilt
-        mRotY(&model, th*ymag*0.2f);
+        if(enable_noseup == 1)
+            mRotY(&model, th*ymag*0.2f);
         // if(ymag > 0.f)
         //     mRotY(&model, ymag*3.f);
 
@@ -402,6 +404,19 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             
             // new
             newSim();
+        }
+
+        // nose up toggle
+        if(key == GLFW_KEY_P)
+        {
+            enable_noseup = 1 - enable_noseup;
+            char strts[16];
+            timestamp(&strts[0]);
+            if(enable_noseup == 0)
+                printf("[%s] NOSE UP: OFF\n", strts);
+            else
+                printf("[%s] NOSE UP: ON\n", strts);
+            
         }
 
         // show average fps
@@ -467,6 +482,7 @@ int main(int argc, char** argv)
     printf("e.g; ./uc 16 60\n");
     printf("----\n");
     printf("N = New sim.\n");
+    printf("P = Toggle nose up.\n");
     printf("F = FPS to console.\n");
     printf("----\n");
 
