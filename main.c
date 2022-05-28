@@ -58,8 +58,6 @@ double t = 0;   // time
 f32 dt = 0;     // delta time
 double fc = 0;  // frame count
 double lfct = 0;// last frame count time
-double lc = 0;  // logic count
-double llct = 0;// last logic count time
 f32 aspect;
 double x,y,lx,ly;
 double rww, ww, rwh, wh, ww2, wh2;
@@ -275,117 +273,116 @@ void main_loop()
 //*************************************
 // camera
 //*************************************
-    if(RENDER_PASS == 1)
-    {
-        mIdent(&view);
-        mRotY(&view, 234.f*DEG2RAD);
-        mTranslate(&view, 0.f, 0.f, th + (fabsf(sinf(t*simspeed))*0.1f) + 0.2f); //th + 0.2f
-        mRotY(&view, -t*simspeed);
+
+    mIdent(&view);
+    mRotY(&view, 234.f*DEG2RAD);
+    mTranslate(&view, 0.f, 0.f, th + (fabsf(sinf(t*simspeed))*0.1f) + 0.2f); //th + 0.2f
+    mRotY(&view, -t*simspeed);
 
 //*************************************
 // render
 //*************************************
 
-        // clear render and depth buffers
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        // prep mars for rendering
-        shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
-        glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
-        glUniform1f(opacity_id, 1.0f);
+    // clear render and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // prep mars for rendering
+    shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
+    glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
+    glUniform1f(opacity_id, 1.0f);
 
-        // maticies
-        glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
-        glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &view.m[0][0]);
+    // maticies
+    glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
+    glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &view.m[0][0]);
 
-        // render
-        modelBind3(&mdlOuter);
-        glDisable(GL_CULL_FACE); // because I messed up in blender.. i know.. damn. I know not to do that next time.
-        glDrawElements(GL_TRIANGLES, outer_numind, GL_UNSIGNED_INT, 0);
-        glEnable(GL_CULL_FACE);
-        modelBind3(&mdlInner);
-        glDrawElements(GL_TRIANGLES, inner_numind, GL_UNSIGNED_INT, 0);
+    // render
+    modelBind3(&mdlOuter);
+    glDisable(GL_CULL_FACE); // because I messed up in blender.. i know.. damn. I know not to do that next time.
+    glDrawElements(GL_TRIANGLES, outer_numind, GL_UNSIGNED_INT, 0);
+    glEnable(GL_CULL_FACE);
+    modelBind3(&mdlInner);
+    glDrawElements(GL_TRIANGLES, inner_numind, GL_UNSIGNED_INT, 0);
 
-        // render cosmos
-        shadeLambert(&position_id, &projection_id, &modelview_id, &lightpos_id, &color_id, &opacity_id);
-        glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
-        glUniform1f(opacity_id, 1.0f);
-        modelBind(&mdlSphere);
-        for(uint i = 0; i < COSMOS_SIZE; i++)
-        {
-            glUniform3f(color_id, cosmos_color[i].x, cosmos_color[i].y, cosmos_color[i].z);
-            rSphere(cosmos[i].x, cosmos[i].y, cosmos[i].z, cosmos_scale[i]);
-        }
-
-        // begin hova rendering
-        shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
-        glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
-        glUniform1f(opacity_id, 1.0f);
-
-        // prep matrix
-        mIdent(&model);
-        mRotY(&model, (t*simspeed)+0.017f); // camtracking rot
-        mRotX(&model, 180.f*DEG2RAD);
-        mTranslate(&model, sinf(t*simspeed)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
-
-        // workout average terrain height
-        vec pos;
-        mGetPos(&pos, model);
-        f32 ah = 0.f;
-        f32 ahc = 0.f;
-        f32 ymag = 0.f;
-        const uint vas = ((uint)inner_numvert)*3;
-        for(uint i = 0; i < vas; i+=3)
-        {
-            vec vp;
-            vp.x = inner_vertices[i];
-            vp.y = inner_vertices[i+1];
-            vp.z = inner_vertices[i+2];
-            if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range
-            {
-                ah += vMod(vp);
-                ahc += 1.f;
-            }
-        }
-        if(ahc > 0.f)
-        {
-            ah /= ahc;
-            if(ah > th) // only adjust up and let gravity pull down
-            {
-                ymag = ah-th;
-                th += simspeed*60.f*ymag*dt; // thrust
-            }
-        }
-
-        // "mars gravity"
-        th -= simspeed*dt;
-
-        // stat to console
-        //printf("%f %f %f %f\n", pos.x, pos.y, pos.z, ah);
-
-        // correct height
-        mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.16f);
-
-        // ymag tilt
-        if(enable_noseup == 1)
-            mRotY(&model, th*ymag*0.2f);
-        // if(ymag > 0.f)
-        //     mRotY(&model, ymag*3.f);
-
-        // make modelview
-        mMul(&modelview, &model, &view);
-
-        // set matricies for shader
-        glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
-        glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
-
-        // render hova
-        modelBind3(&mdlHova);
-        glDrawElements(GL_TRIANGLES, hova_numind, GL_UNSIGNED_SHORT, 0);
-
-        // dislay new render
-        glfwSwapBuffers(window);
+    // render cosmos
+    shadeLambert(&position_id, &projection_id, &modelview_id, &lightpos_id, &color_id, &opacity_id);
+    glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
+    glUniform1f(opacity_id, 1.0f);
+    modelBind(&mdlSphere);
+    for(uint i = 0; i < COSMOS_SIZE; i++)
+    {
+        glUniform3f(color_id, cosmos_color[i].x, cosmos_color[i].y, cosmos_color[i].z);
+        rSphere(cosmos[i].x, cosmos[i].y, cosmos[i].z, cosmos_scale[i]);
     }
+
+    // begin hova rendering
+    shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
+    glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
+    glUniform1f(opacity_id, 1.0f);
+
+    // prep matrix
+    mIdent(&model);
+    mRotY(&model, (t*simspeed)+0.017f); // camtracking rot
+    mRotX(&model, 180.f*DEG2RAD);
+    mTranslate(&model, sinf(t*simspeed)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
+
+    // workout average terrain height
+    vec pos;
+    mGetPos(&pos, model);
+    f32 ah = 0.f;
+    f32 ahc = 0.f;
+    f32 ymag = 0.f;
+    const uint vas = ((uint)inner_numvert)*3;
+    for(uint i = 0; i < vas; i+=3)
+    {
+        vec vp;
+        vp.x = inner_vertices[i];
+        vp.y = inner_vertices[i+1];
+        vp.z = inner_vertices[i+2];
+        if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range
+        {
+            ah += vMod(vp);
+            ahc += 1.f;
+        }
+    }
+    if(ahc > 0.f)
+    {
+        ah /= ahc;
+        if(ah > th) // only adjust up and let gravity pull down
+        {
+            ymag = ah-th;
+            th += simspeed*60.f*ymag*dt; // thrust
+        }
+    }
+
+    // "mars gravity"
+    th -= simspeed*dt;
+
+    // stat to console
+    //printf("%f %f %f %f\n", pos.x, pos.y, pos.z, ah);
+
+    // correct height
+    mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.16f);
+
+    // ymag tilt
+    if(enable_noseup == 1)
+        mRotY(&model, th*ymag*0.2f);
+    // if(ymag > 0.f)
+    //     mRotY(&model, ymag*3.f);
+
+    // make modelview
+    mMul(&modelview, &model, &view);
+
+    // set matricies for shader
+    glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
+    glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
+
+    // render hova
+    modelBind3(&mdlHova);
+    glDrawElements(GL_TRIANGLES, hova_numind, GL_UNSIGNED_SHORT, 0);
+
+    // dislay new render
+    glfwSwapBuffers(window);
+
 }
 
 //*************************************
@@ -431,11 +428,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
                 char strts[16];
                 timestamp(&strts[0]);
                 printf("[%s] FPS: %g\n", strts, fc/(t-lfct));
-                printf("[%s] LPS: %g\n", strts, lc/(t-llct));
                 lfct = t;
                 fc = 0;
-                llct = t;
-                lc = 0;
             }
         }
     }
@@ -565,48 +559,36 @@ int main(int argc, char** argv)
 //*************************************
 
     // init
-    const double maxlps = 60.0;
     t = glfwGetTime();
     lfct = t;
-    dt = 1.0 / (float)maxlps; // fixed timestep delta-time
+    dt = 1.0 / (float)maxfps; // fixed timestep delta-time
     newSim();
     
-    // lps accurate event loop
-    const double fps_limit = 1.0 / maxfps;
-    double rlim = 0.0;
-    const useconds_t wait_interval = 1000000 / maxlps; // fixed timestep
+    // fps accurate event loop
+    const useconds_t wait_interval = 1000000 / maxfps; // fixed timestep
     useconds_t wait = wait_interval;
     while(!glfwWindowShouldClose(window))
     {
         usleep(wait);
         t = glfwGetTime();
+
         glfwPollEvents();
-
-        if(maxfps < maxlps)
-        {
-            if(t > rlim)
-            {
-                RENDER_PASS = 1;
-                rlim = t + fps_limit; // should be doing this after main_loop() at the very least but it's not a big deal.
-                fc++;
-            }
-            else
-                RENDER_PASS = 0;
-        }
-        else
-        {
-            RENDER_PASS = 1;
-            fc++;
-        }
-
         main_loop();
 
-        // accurate lps
+        // accurate fps
         wait = wait_interval - (useconds_t)((glfwGetTime() - t) * 1000000.0);
         if(wait > wait_interval)
             wait = wait_interval;
-        lc++;
+        
+        fc++;
     }
+
+    /*
+        because the simulation is quite simple I was able to couple the
+        fps loop and the logic loop. Because I allow users to specify
+        a custom fps cap via the argv there is no need in my view for
+        a dynamic delta-time per timestep/frame.
+    */
 
     // end
     timeTaken(0);
