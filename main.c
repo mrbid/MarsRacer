@@ -5,6 +5,8 @@
     Info:
     
         A hover car game on mars.
+
+        You know what, I will just leave this as a simulation.
         
 */
 
@@ -21,7 +23,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#define uint GLushort
+#define uint unsigned int
 #define sint GLshort
 #define f32 GLfloat
 
@@ -98,6 +100,10 @@ char tts[32];// time taken string
 vec cosmos[COSMOS_SIZE];
 vec cosmos_color[COSMOS_SIZE];
 f32 cosmos_scale[COSMOS_SIZE];
+
+// hova sim
+f32 th = 14.5f; // terrain height
+f32 hh = 14.3f; // hova height
 
 //*************************************
 // utility functions
@@ -270,31 +276,35 @@ void main_loop()
     
     mIdent(&view);
     mRotY(&view, 234.f*DEG2RAD);
-    mTranslate(&view, 0.f, 0.f, 14.5f);
+    mTranslate(&view, 0.f, 0.f, th + 0.2f);
     mRotY(&view, -t*0.1f);
 
 //*************************************
 // render
 //*************************************
     if(RENDER_PASS == 1)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    if(RENDER_PASS == 1)
     {
+        // clear render and depth buffers
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        // prep mars for rendering
         shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
         glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
         glUniform1f(opacity_id, 1.0f);
 
+        // maticies
         glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
         glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &view.m[0][0]);
 
+        // render
         modelBind3(&mdlOuter);
-        glDisable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE); // because I messed up in blender.. i know.. damn. I know not to do that next time.
         glDrawElements(GL_TRIANGLES, outer_numind, GL_UNSIGNED_INT, 0);
         glEnable(GL_CULL_FACE);
         modelBind3(&mdlInner);
         glDrawElements(GL_TRIANGLES, inner_numind, GL_UNSIGNED_INT, 0);
 
+        // render cosmos
         shadeLambert(&position_id, &projection_id, &modelview_id, &lightpos_id, &color_id, &opacity_id);
         glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
         glUniform1f(opacity_id, 1.0f);
@@ -305,30 +315,63 @@ void main_loop()
             rSphere(cosmos[i].x, cosmos[i].y, cosmos[i].z, cosmos_scale[i]);
         }
 
-
+        // begin hova rendering
         shadeLambert3(&position_id, &projection_id, &modelview_id, &lightpos_id, &normal_id, &color_id, &opacity_id);
         glUniform3f(lightpos_id, lightpos.x, lightpos.y, lightpos.z);
         glUniform1f(opacity_id, 1.0f);
 
+        // prep matrix
         mIdent(&model);
         mRotY(&model, (t*0.1f)+0.017f); // camtracking rot
         mRotX(&model, 180.f*DEG2RAD);
-        mRotZ(&model, (t*0.1f)+0.017f); // showroom rot
-        mTranslate(&model, 0.f, 0.f, 14.3f);
+        mTranslate(&model, sinf(t*0.1f)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
+
+        // workout average terrain height (will be 1 frame lagging due to order of exec, who cares.)
+        vec pos;
+        mGetPos(&pos, model);
+        f32 ah = 0.f;
+        f32 ahc = 0.f;
+        const uint vas = ((uint)inner_numvert)*3;
+        for(uint i = 0; i < vas; i+=3)
+        {
+            vec vp;
+            vp.x = inner_vertices[i];
+            vp.y = inner_vertices[i+1];
+            vp.z = inner_vertices[i+2];
+            if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range (larger = smoother)
+            {
+                ah += vMod(vp);
+                ahc += 1.f;
+            }
+        }
+        if(ahc > 0.f)
+        {
+            ah /= ahc;
+            if(ah > th) // only adjust up and let gravity full down
+                th = ah;
+        }
+        th -= 0.1f*dt; // "mars gravity", also first use of delta time
+
+        // stat to console
+        //printf("%f %f %f %f\n", pos.x, pos.y, pos.z, ah);
+
+        // correct height
+        mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.1f);
+
+        // make modelview
         mMul(&modelview, &model, &view);
 
+        // set matricies for shader
         glUniformMatrix4fv(projection_id, 1, GL_FALSE, (f32*) &projection.m[0][0]);
         glUniformMatrix4fv(modelview_id, 1, GL_FALSE, (f32*) &modelview.m[0][0]);
 
+        // render hova
         modelBind3(&mdlHova);
-        //glDisable(GL_DEPTH_TEST);
         glDrawElements(GL_TRIANGLES, hova_numind, GL_UNSIGNED_SHORT, 0);
-        //glEnable(GL_DEPTH_TEST);
 
-    }
-
-    if(RENDER_PASS == 1)
+        // dislay new render
         glfwSwapBuffers(window);
+    }
 }
 
 //*************************************
