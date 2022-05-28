@@ -4,9 +4,7 @@
 
     Info:
     
-        A hover car game on mars.
-
-        You know what, I will just leave this as a simulation.
+        A hover car simulation on mars.
         
 */
 
@@ -94,6 +92,7 @@ ESModel mdlHova;
 uint RENDER_PASS = 0;
 double st=0; // start time
 char tts[32];// time taken string
+const f32 simspeed = 0.1f;
 
 // cosmos
 #define COSMOS_SIZE 256
@@ -273,17 +272,16 @@ void main_loop()
 //*************************************
 // camera
 //*************************************
-    
-    mIdent(&view);
-    mRotY(&view, 234.f*DEG2RAD);
-    mTranslate(&view, 0.f, 0.f, th + 0.2f);
-    mRotY(&view, -t*0.1f);
+    if(RENDER_PASS == 1)
+    {
+        mIdent(&view);
+        mRotY(&view, 234.f*DEG2RAD);
+        mTranslate(&view, 0.f, 0.f, th + (fabsf(sinf(t*simspeed))*0.1f) + 0.2f); //th + 0.2f
+        mRotY(&view, -t*simspeed);
 
 //*************************************
 // render
 //*************************************
-    if(RENDER_PASS == 1)
-    {
         // clear render and depth buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -322,9 +320,9 @@ void main_loop()
 
         // prep matrix
         mIdent(&model);
-        mRotY(&model, (t*0.1f)+0.017f); // camtracking rot
+        mRotY(&model, (t*simspeed)+0.017f); // camtracking rot
         mRotX(&model, 180.f*DEG2RAD);
-        mTranslate(&model, sinf(t*0.1f)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
+        mTranslate(&model, sinf(t*simspeed)*0.1f, 0.f, 14.3f); // 14.3f is the terrain midpoint we will sample for height offset correction
 
         // workout average terrain height (will be 1 frame lagging due to order of exec, who cares.)
         vec pos;
@@ -338,7 +336,7 @@ void main_loop()
             vp.x = inner_vertices[i];
             vp.y = inner_vertices[i+1];
             vp.z = inner_vertices[i+2];
-            if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range (larger = smoother)
+            if(vDist(vp, pos) < 0.63f) // 0.63f is the average sample range
             {
                 ah += vMod(vp);
                 ahc += 1.f;
@@ -347,16 +345,18 @@ void main_loop()
         if(ahc > 0.f)
         {
             ah /= ahc;
-            if(ah > th) // only adjust up and let gravity full down
-                th = ah;
+            if(ah > th) // only adjust up and let gravity pull down
+                th += simspeed*88.f*(ah-th)*dt; // thrust th = ah;
         }
-        th -= 0.1f*dt; // "mars gravity", also first use of delta time
+
+        // "mars gravity"
+        th -= simspeed*dt;
 
         // stat to console
         //printf("%f %f %f %f\n", pos.x, pos.y, pos.z, ah);
 
         // correct height
-        mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.1f);
+        mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.16f);
 
         // make modelview
         mMul(&modelview, &model, &view);
@@ -389,7 +389,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             timeTaken(0);
             char strts[16];
             timestamp(&strts[0]);
-            printf("[%s] Game End.\n", strts);
+            printf("[%s] Sim End.\n", strts);
             printf("[%s] Time-Taken: %s or %g Seconds\n\n", strts, tts, t-st);
             
             // new
@@ -458,7 +458,7 @@ int main(int argc, char** argv)
     printf("Argv(2): msaa, maxfps\n");
     printf("e.g; ./uc 16 60\n");
     printf("----\n");
-    printf("N = New game.\n");
+    printf("N = New sim.\n");
     printf("F = FPS to console.\n");
     printf("----\n");
 
@@ -551,7 +551,7 @@ int main(int argc, char** argv)
     t = glfwGetTime();
     lfct = t;
     dt = 1.0 / (float)maxlps; // fixed timestep delta-time
-    newGame();
+    newSim();
     
     // lps accurate event loop
     const double fps_limit = 1.0 / maxfps;
@@ -594,7 +594,7 @@ int main(int argc, char** argv)
     timeTaken(0);
     char strts[16];
     timestamp(&strts[0]);
-    printf("[%s] Game End.\n", strts);
+    printf("[%s] Sim End.\n", strts);
     printf("[%s] Time-Taken: %s or %g Seconds\n\n", strts, tts, t-st);
 
     // done
