@@ -328,6 +328,7 @@ void main_loop()
         mGetPos(&pos, model);
         f32 ah = 0.f;
         f32 ahc = 0.f;
+        f32 ymag = 0.f;
         const uint vas = ((uint)inner_numvert)*3;
         for(uint i = 0; i < vas; i+=3)
         {
@@ -345,7 +346,10 @@ void main_loop()
         {
             ah /= ahc;
             if(ah > th) // only adjust up and let gravity pull down
-                th += simspeed*60.f*(ah-th)*dt; // thrust
+            {
+                ymag = ah-th;
+                th += simspeed*60.f*ymag*dt; // thrust
+            }
         }
 
         // "mars gravity"
@@ -356,6 +360,11 @@ void main_loop()
 
         // correct height
         mTranslate(&model, 0.f, 0.f, (th-14.3f)+0.16f);
+
+        // ymag tilt
+        mRotY(&model, th*ymag*0.2f);
+        // if(ymag > 0.f)
+        //     mRotY(&model, ymag*3.f);
 
         // make modelview
         mMul(&modelview, &model, &view);
